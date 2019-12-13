@@ -1,52 +1,56 @@
 # complex_fmt_scn
-playground for std::complex fmt / scn implementations
+playground for std::complex fmt / scn implementations & spec
 
 # Motivation
 
-The advent of `{fmt}`, `scnlib` and chevron-free type-safe io offers
-the opportunity to update c++'s default representation of complex
-numbers.  A notation such as `(3+4i)` that includes the imaginary unit
-is more friendly, and easier to use than the current iostreams
-convention of displaying complex numbers as an ordered pair separated
-by a comma: `(3,4)`.
+This is a proposal for the `<format>` library to format complex
+numbers (`std::complex<>`) as `(3+4i)`.  The introduction of
+chevron-free type-safe formatting offers the opportunity to update
+c++'s common representation of complex numbers.  The notation `(3+4i)`
+is common in many mathematical software environments, the physical
+sciences, and is more consistent with c++ itself.  The conservative
+observer will note that this is different and incompatible with
+iostream formatting of `std::complex<>`.  Besides defining the the new
+format, this proposal attempts to address questions arounding
+introducing a different format, and why the advantages outweigh the
+disadvantages.
 
-We propose the imaginary-unit notation to be preferrable to the
-ordered-pair notation for a number of reasons: it is easier for humans
-accustomed to mathematics to read, it is unambiguously an object with
-complex type (whereas an ordered pair is just an ordered pair), it
-aligns with the c++14 `std::literals::complex_literals` notation, it
-only adds one extra character symbol per object (the imaginary unit
-specifier, if even that) rather than the three of iostreams (the
-opening and closing parens and separating comma), and it allows for
-omission of one of the parts if it can be determined by its omission
-(is zero - more on that below).
+Imaginary-unit notation has several advantages over ordered-pair
+notation: it is easier for users accustomed to mathematics to read, it
+represents unambiguously an object with complex type (as opposed to an
+ordered pair), it aligns with the c++14
+`std::literals::complex_literals` notation, it only adds one mandatory
+extra character symbol per object (the imaginary unit specifier, by
+default) rather than the three of iostreams (the opening and closing
+parens and separating comma), and it allows for omission of one of the
+parts if that part can be unambiguously determined by its omission
+(that is, if it is zero - more on that below).
 
-As an added bonus, removal of the comma from complex number formatting
-also removes the current possibility in iostreams of silent generation
-of ambiguous output, which could happen, ie, when the locale's decimal
-separator is set to comma.
+As an added benefit, removal of the comma from complex number
+formatting rectifies the current possibility in iostreams of silent
+unexpected generation of ambiguous output, which can happen, ie, when
+the locale's decimal separator is set to comma.
 
 # Considerations
 
-Undertaking this fundamental change in how a standard library object
-is represented textually should be done carefully so that, while
-adding new functionality, the existing widely-used implementation is
-faithfully replicated.  The following points are considered:
+With an eye to entirely replacing the functionality of iostreams, the
+following considerations are made:
 
 ## Numeric form
 
-The question of how to represent the underlying `std::complex<T>`\'s
-`value_type` (`T`) is delegated to `formatter<T>` for that type.
-Special alignment and fill rules apply for `T` \$ \in \$ {`float`,
-`double`, `long double`}, but other custom value types are
-accomodated. This is done by forwarding a designated portion of the
-formatting specification to `T`'s formatter.
+The question of how to represent `std::complex<T>`\'s `value_type`
+(always equal to, and more conveniently referred to as `T` from here
+on) is simply delegated to the `formatter<T>` for that type.  Special
+alignment and fill rules apply for `T` $` \in `$ {`float`, `double`,
+`long double`}, but other custom value types are accomodated. This is
+done by forwarding a designated portion of the format spec to
+`formatter<T>`.
 
 Although the standard does not specify behavior of `std::complex<T>`
 for other types, it is not un-common to use a type for `T` which
 provides other functionality such as extended precision or automatic
 differentiation.  The formatting specification should therefore be
-hierarchical, so that an arbitrary type `T` can be properly and
+recursive, so that an arbitrary type `T` can be properly and
 automatically formatted.
 
 ## Imaginary unit
