@@ -10,12 +10,22 @@ int main(int argc, char *argv[])
 {
   complexd a(3,-4);
   fmt::print("{}\n", a);
+
+  fmt::print("{}\n", complexd(0., 0.));
+  fmt::print("{}\n", complexd(-0., -0.));
+  fmt::print("{}\n", complexd(-0., 1.));
+
   fmt::print("{:+}\n", a);
   fmt::print("{:+ }\n", a);
   fmt::print("{: +}\n", a);
+
   fmt::print("{:,}\n", a);
+
   fmt::print("{:+}\n", a);
   fmt::print("{:{}j}\n", a);
+  fmt::print("{:{}*j}\n", a);
+  fmt::print("{:{}im}\n", a);
+  fmt::print("{:{}{}im}\n", a);
   fmt::print("{:+{.3}}\n", a);
   fmt::print("{:{6.6}+{3.3}}\n", a);
 }

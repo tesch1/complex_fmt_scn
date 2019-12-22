@@ -29,6 +29,7 @@ struct fmt::formatter<std::complex<T>,Char>
 
     // embedded real format
     if (*it == '{') {
+      got_real = true;
       auto real_begin = it;
       ctx.advance_to(++it);
       it = f_real_.parse(ctx);
@@ -41,9 +42,6 @@ struct fmt::formatter<std::complex<T>,Char>
     case ',': join_ = ','; ++it; im_str_ = ""; break;
     default: break;
     }
-
-    if ((join1_.data() || join2_.data()) && (join_ != ',' && join_ != '+'))
-      FMT_THROW(format_error("complex invalid join spec"));
 
     // embedded imag format
     if (*it == '{') {
@@ -65,7 +63,7 @@ struct fmt::formatter<std::complex<T>,Char>
     }
 
     // capture imag part string, if any
-    if (*it != '}') {
+    if (*it != '}' && join_ != ',') {
       auto im_end = it;
       while (im_end != end && *im_end != '}')
         ++im_end;
@@ -76,15 +74,27 @@ struct fmt::formatter<std::complex<T>,Char>
   }
   template <typename FormatCtx>
   auto format(const std::complex<T> & x, FormatCtx & ctx) -> decltype(ctx.out()) {
-    format_to(ctx.out(), "(");
-    f_real_.format(_no_neg_zero ? (x.real() + T(0)) : x.real(), ctx);
-    if (join1_.data()) format_to(ctx.out(), "{}", join1_);
-    if (join_ == ',')
-      format_to(ctx.out(), "{}", ",");
-    else
+    if (join_ == ',') {
+      format_to(ctx.out(), "(");
+      f_real_.format(_no_neg_zero ? (x.real() + T(0)) : x.real(), ctx);
+      format_to(ctx.out(), ",");
+      f_imag_.format(x.imag(), ctx);
+      return format_to(ctx.out(), ")");
+    }
+    else {
+      bool drop_real = x.real() == 0 && !std::signbit(x.real());
+      if (!drop_real) {
+        format_to(ctx.out(), "(");
+        f_real_.format(_no_neg_zero ? (x.real() + T(0)) : x.real(), ctx);
+      }
+      else
+        format_to(ctx.out(), "{:{}}", "", 9);
       format_to(ctx.out(), "{}", std::signbit(x.imag()) ? "-" : "+");
-    if (join2_.data()) format_to(ctx.out(), "{}", join2_);
-    f_imag_.format(std::signbit(x.imag()) ? -x.imag() : x.imag(), ctx);
-    return format_to(ctx.out(), "{})", im_str_);
+      f_imag_.format(std::signbit(x.imag()) ? -x.imag() : x.imag(), ctx);
+      format_to(ctx.out(), "{}", im_str_);
+      if (!drop_real)
+        format_to(ctx.out(), ")");
+      return ctx.out();
+    }
   }
 };
